@@ -1,14 +1,14 @@
-Niche Designz built the Easy Shopping List app as a Free app. This SERVICE is provided by Niche Designz at no cost and is intended for use as is.
+Niche Designz built the Easy List app as a Free app. This SERVICE is provided by Niche Designz at no cost and is intended for use as is.
 
 This page is used to inform visitors regarding our policies with the collection, use, and disclosure of information if anyone decides to use our Service.
 
-If you choose to use our Service, then you agree to the handling of information as described in this Privacy Policy. Easy Shopping List is designed to help users organize their shopping items and manage their shopping lists.
+If you choose to use our Service, then you agree to the handling of information as described in this Privacy Policy. Easy List is designed to help users organize their shopping items and manage their shopping lists.
 
 The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, unless otherwise defined in this Privacy Policy.
 
 ## Information Collection and Use
 
-Easy Shopping List is designed to work without requiring users to create an account or provide personally identifiable information.
+Easy List is designed to work without requiring users to create an account or provide personally identifiable information.
 
 The app may store information such as shopping item names, quantities, units, purchased status, autocomplete suggestions, and app preferences locally on your device. This information is used to provide and improve the functionality of the Service.
 
@@ -32,7 +32,7 @@ However, third-party services or libraries included in the app may use technolog
 
 ## Sharing Your Shopping List
 
-Easy Shopping List may allow you to share your shopping list through third-party applications such as messaging apps or email.
+Easy List may allow you to share your shopping list through third-party applications such as messaging apps or email.
 
 When you choose to share a list, the selected information is passed to the application or service you choose. Those third parties may process your information under their own privacy policies.
 
