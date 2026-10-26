@@ -3,36 +3,6 @@ import 'package:get/get.dart';
 
 import '../../theme/app_theme.dart';
 
-void showAppAboutDialog(BuildContext context) {
-  final t = AppTokens.of(context);
-  Get.dialog(
-    AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      icon: CircleAvatar(
-        backgroundColor: t.lightSage,
-        child: Icon(Icons.shopping_basket_outlined, color: t.primaryDark),
-      ),
-      title: const Text(
-        'Shopping List',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-      ),
-      content: const Text(
-        'Remember. Add. Buy. Done.\n\n'
-        'A minimal offline shopping list. '
-        'Your items stay on this device.',
-        textAlign: TextAlign.center,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(),
-          child: const Text('Close'),
-        ),
-      ],
-    ),
-  );
-}
-
 class LegalSection {
   final String heading;
   final String body;
@@ -141,7 +111,7 @@ class PrivacyPolicyPage extends StatelessWidget {
     return LegalPage(
       title: 'Privacy Policy',
       intro:
-          'Shopping List is a fully offline app. This policy explains what '
+          'Easy List is a fully offline app. This policy explains what '
           'the app stores and, more importantly, what it never collects.',
       sections: const [
         LegalSection(
@@ -161,7 +131,7 @@ class PrivacyPolicyPage extends StatelessWidget {
         ),
         LegalSection(
           'Network access',
-          'Shopping List works completely offline. It does not send your '
+          'Easy List works completely offline. It does not send your '
               'data anywhere, and nothing is uploaded to a server or shared '
               'with third parties.',
         ),
@@ -202,12 +172,12 @@ class TermsPage extends StatelessWidget {
     return LegalPage(
       title: 'Terms & Conditions',
       intro:
-          'By installing and using Shopping List you agree to these terms. '
+          'By installing and using Easy List you agree to these terms. '
           'They are written to be as short and plain as possible.',
       sections: const [
         LegalSection(
           'What the app does',
-          'Shopping List lets you keep a simple list of items to buy, with '
+          'Easy List lets you keep a simple list of items to buy, with '
               'optional quantity and unit, purchased status, filters and '
               'name suggestions. All processing happens on your device.',
         ),

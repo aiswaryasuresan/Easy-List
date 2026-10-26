@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/haptic_service.dart';
+import '../../../core/writers/item_writer.dart';
 import '../../../data/models/shopping_item.dart';
 import '../../../theme/app_theme.dart';
 import '../../item_form/item_form_sheet.dart';
 import '../home_controller.dart';
 
 class ItemOptionsSheet {
-  static Future<void> show(BuildContext context, ShoppingItem item) async {
+  static Future<void> show(BuildContext context, ShoppingItem item,
+      {ItemWriter? writer}) async {
     final t = AppTokens.of(context);
-    final controller = Get.find<HomeController>();
+    final controller = writer ?? Get.find<HomeController>();
     await Get.bottomSheet(
       SafeArea(
         child: Container(
@@ -69,7 +71,7 @@ class ItemOptionsSheet {
                     label: 'Edit item',
                     onTap: () {
                       Get.back();
-                      ItemFormSheet.showEdit(item);
+                      ItemFormSheet.showEdit(item, writer: writer);
                     },
                   ),
                   _OptionTile(
@@ -86,7 +88,7 @@ class ItemOptionsSheet {
                     color: t.destructive,
                     onTap: () {
                       Get.back();
-                      confirmDelete(context, item);
+                      confirmDelete(context, item, writer: writer);
                     },
                   ),
                   const SizedBox(height: 8),
@@ -109,9 +111,9 @@ class ItemOptionsSheet {
   }
 
   static Future<void> confirmDelete(
-      BuildContext context, ShoppingItem item) async {
+      BuildContext context, ShoppingItem item, {ItemWriter? writer}) async {
     final t = AppTokens.of(context);
-    final controller = Get.find<HomeController>();
+    final controller = writer ?? Get.find<HomeController>();
     return showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -123,7 +125,7 @@ class ItemOptionsSheet {
         ),
         title: const Text('Delete item?', textAlign: TextAlign.center),
         content: Text(
-          '"${item.name}" will be removed from your list.',
+          '"${item.name}" will be removed from ${controller.listLabel}.',
           textAlign: TextAlign.center,
         ),
         actionsAlignment: MainAxisAlignment.center,

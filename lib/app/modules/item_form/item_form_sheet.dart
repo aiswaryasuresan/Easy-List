@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../core/services/haptic_service.dart';
 import '../../core/widgets/tap_pulse.dart';
+import '../../core/writers/item_writer.dart';
 import '../../data/grocery_suggestions.dart';
 import '../../data/models/shopping_item.dart';
 import '../../theme/app_theme.dart';
@@ -14,29 +15,33 @@ class ItemFormSheet extends StatefulWidget {
   final ShoppingItem? item;
   final String? initialName;
   final String? initialUnit;
+  final ItemWriter? writer;
 
   const ItemFormSheet({
     super.key,
     this.item,
     this.initialName,
     this.initialUnit,
+    this.writer,
   });
 
-  static Future<void> showAdd({String? name, String? unit}) => Get.bottomSheet(
-    ItemFormSheet(initialName: name, initialUnit: unit),
-    isScrollControlled: true,
-    ignoreSafeArea: true,
-    backgroundColor: Colors.transparent,
-    enableDrag: true,
-  );
+  static Future<void> showAdd({String? name, String? unit, ItemWriter? writer}) =>
+      Get.bottomSheet(
+        ItemFormSheet(initialName: name, initialUnit: unit, writer: writer),
+        isScrollControlled: true,
+        ignoreSafeArea: true,
+        backgroundColor: Colors.transparent,
+        enableDrag: true,
+      );
 
-  static Future<void> showEdit(ShoppingItem item) => Get.bottomSheet(
-    ItemFormSheet(item: item),
-    isScrollControlled: true,
-    ignoreSafeArea: true,
-    backgroundColor: Colors.transparent,
-    enableDrag: true,
-  );
+  static Future<void> showEdit(ShoppingItem item, {ItemWriter? writer}) =>
+      Get.bottomSheet(
+        ItemFormSheet(item: item, writer: writer),
+        isScrollControlled: true,
+        ignoreSafeArea: true,
+        backgroundColor: Colors.transparent,
+        enableDrag: true,
+      );
 
   @override
   State<ItemFormSheet> createState() => _ItemFormSheetState();
@@ -86,7 +91,7 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
   }
 
   void _save() {
-    final controller = Get.find<HomeController>();
+    final controller = widget.writer ?? Get.find<HomeController>();
     final name = _nameController.text.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (name.isEmpty) {
       setState(() => _nameError = 'Please enter an item name.');
@@ -119,7 +124,8 @@ class _ItemFormSheetState extends State<ItemFormSheet> {
   void _delete() {
     if (!isEditing) return;
     Get.back();
-    ItemOptionsSheet.confirmDelete(context, widget.item!);
+    ItemOptionsSheet.confirmDelete(context, widget.item!,
+        writer: widget.writer);
   }
 
   @override

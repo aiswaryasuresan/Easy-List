@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/writers/item_writer.dart';
 import '../../../theme/app_theme.dart';
 import '../home_controller.dart';
 
 class ClearPurchasedDialog {
-  static Future<void> confirm(BuildContext context) async {
+  /// Clears purchased items from [writer]'s list, defaulting to the main
+  /// shopping list.
+  static Future<void> confirm(
+    BuildContext context, {
+    ItemWriter? writer,
+    String listLabel = 'your list',
+  }) async {
     final t = AppTokens.of(context);
-    final controller = Get.find<HomeController>();
+    final controller = writer ?? Get.find<HomeController>();
     return showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -20,8 +27,8 @@ class ClearPurchasedDialog {
         title: const Text('Clear purchased items?',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-        content: const Text(
-          'This will remove all purchased items from your list. '
+        content: Text(
+          'This will remove all purchased items from $listLabel. '
           'This action cannot be undone.',
           textAlign: TextAlign.center,
         ),

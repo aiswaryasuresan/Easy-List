@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -6,6 +7,9 @@ import '../../core/services/haptic_service.dart';
 import '../../data/models/shopping_item.dart';
 import '../../theme/app_theme.dart';
 import '../home/home_controller.dart';
+
+/// The home list has no stored name of its own, so shared text carries this.
+const activeListTitle = 'My Shopping List';
 
 class SharePage extends GetView<HomeController> {
   const SharePage({super.key});
@@ -19,21 +23,47 @@ class SharePage extends GetView<HomeController> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: Text(
-              'Share',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: t.textPrimary,
-              ),
+            padding: const EdgeInsets.fromLTRB(8, 4, 20, 0),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    controller.tab.value = 0;
+                    HapticService.selection();
+                  },
+                  icon: const Icon(Icons.arrow_back),
+                  color: t.textPrimary,
+                ),
+                Text(
+                  'Share',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: t.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-            child: Text(
-              'Send a snapshot of your list to anyone.',
-              style: TextStyle(fontSize: 13, color: t.textSecondary),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activeListTitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: t.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Send a snapshot of your list to anyone.',
+                  style: TextStyle(fontSize: 13, color: t.textSecondary),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -69,13 +99,36 @@ class SharePage extends GetView<HomeController> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Obx(() {
               final hasItems = controller.items.isNotEmpty;
-              return FilledButton.icon(
-                onPressed: hasItems ? () => _share(context) : null,
-                icon: const Icon(Icons.ios_share),
-                label: const Text('Share List'),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                ),
+              return Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: FilledButton.icon(
+                      onPressed: hasItems ? () => _share(context) : null,
+                      icon: const Icon(Icons.ios_share),
+                      label: const Text('Share via App'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: hasItems
+                          ? () => _copyToClipboard(context)
+                          : null,
+                      icon: const Icon(Icons.copy_all_outlined),
+                      label: const Text('Copy'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                        foregroundColor: t.primaryDark,
+                        side: BorderSide(color: t.primary),
+                      ),
+                    ),
+                  ),
+                ],
               );
             }),
           ),
@@ -109,16 +162,39 @@ class SharePage extends GetView<HomeController> {
       );
     }
   }
+
+  Future<void> _copyToClipboard(BuildContext context) async {
+    final t = AppTokens.of(context);
+    await Clipboard.setData(
+      ClipboardData(text: buildShareText(controller.items)),
+    );
+    HapticService.success();
+    Get.snackbar(
+      'Copied',
+      'Your list is on the clipboard.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: t.lightSage,
+      colorText: t.primaryDark,
+      margin: const EdgeInsets.all(12),
+    );
+  }
 }
 
-String buildShareText(List<ShoppingItem> items) {
-  final buffer = StringBuffer('My Shopping List\n\n');
+/// Plain-text form of [items]: a title, then one numbered line per item with
+/// its quantity and unit, and a tick for anything already bought.
+String buildShareText(
+  List<ShoppingItem> items, {
+  String title = activeListTitle,
+}) {
+  final buffer = StringBuffer('$title\n\n');
+  var number = 1;
   for (final item in items) {
-    buffer.write('- ${item.name}');
+    buffer.write('$number. ${item.name}');
     final label = item.quantityLabel;
     if (label.isNotEmpty) buffer.write(' — $label');
     if (item.isPurchased) buffer.write(' ✓');
     buffer.write('\n');
+    number++;
   }
   return buffer.toString();
 }
@@ -141,10 +217,7 @@ class _ShareItemCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(
-            productIconFor(item.name),
-            style: const TextStyle(fontSize: 22),
-          ),
+          Text(productIconFor(item.name), style: const TextStyle(fontSize: 22)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -153,7 +226,9 @@ class _ShareItemCard extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: t.textPrimary,
-                decoration: item.isPurchased ? TextDecoration.lineThrough : null,
+                decoration: item.isPurchased
+                    ? TextDecoration.lineThrough
+                    : null,
                 decorationColor: t.textSecondary,
               ),
             ),

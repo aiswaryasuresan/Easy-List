@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../item_form/item_form_sheet.dart';
-import '../legal/legal_pages.dart';
+import '../previous_lists/previous_lists_view.dart';
+import '../previous_lists/widgets/previous_list_dialogs.dart';
 import '../settings/settings_controller.dart';
 import '../share/share_view.dart';
 import '../../core/services/haptic_service.dart';
+import '../../core/widgets/item_filter_chips.dart';
 import '../../core/widgets/tap_pulse.dart';
 import '../../data/default_product_catalog.dart';
 import '../../theme/app_theme.dart';
 import 'home_controller.dart';
+import 'widgets/app_drawer.dart';
 import 'widgets/clear_purchased_dialog.dart';
 import 'widgets/item_row.dart';
 
@@ -26,134 +29,160 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       key: _homeScaffoldKey,
       backgroundColor: t.background,
-      drawer: const _AppDrawer(),
-      body: Obx(() => switch (controller.tab.value) {
-          1 => const _SettingsPage(),
-          2 => const SharePage(),
-          _ => Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _LeafBackground(
-              leafColor: t.lightSage,
-              softLeafColor: t.lightSage.withValues(alpha: 0.45),
-            ),
-          ),
-          SafeArea(
-            child: Column(
+      drawer: const AppDrawer(),
+      // The docked Add button hangs into the body, so keep content clear of it.
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 30),
+        child: Obx(
+          () => switch (controller.tab.value) {
+            1 => const _SettingsPage(),
+            2 => const SharePage(),
+            3 => const PreviousListsView(),
+            _ => Stack(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          FocusScope.of(context).unfocus();
-                          _homeScaffoldKey.currentState?.openDrawer();
-                          HapticService.selection();
-                        },
-                        icon: const Icon(Icons.menu),
-                        color: t.textPrimary,
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () => controller.searchFocus.requestFocus(),
-                        icon: const Icon(Icons.search),
-                        color: t.textPrimary,
-                      ),
-                      _ClearMenuButton(icon: Icons.more_vert),
-                      const SizedBox(width: 4),
-                    ],
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _LeafBackground(
+                    leafColor: t.lightSage,
+                    softLeafColor: t.lightSage.withValues(alpha: 0.45),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-                  child: Row(
+                SafeArea(
+                  child: Column(
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Shopping List',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                FocusScope.of(context).unfocus();
+                                _homeScaffoldKey.currentState?.openDrawer();
+                                HapticService.selection();
+                              },
+                              icon: const Icon(Icons.menu),
                               color: t.textPrimary,
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            "Let's get what you need ✨",
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: t.textSecondary,
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () =>
+                                  controller.searchFocus.requestFocus(),
+                              icon: const Icon(Icons.search),
+                              color: t.textPrimary,
                             ),
-                          ),
-                        ],
+                            _ListMenuButton(icon: Icons.more_vert),
+                            const SizedBox(width: 4),
+                          ],
+                        ),
                       ),
-                      const Spacer(),
-                      Image.asset(
-                        'assets/illustrations/splash_basket.png',
-                        width: 84,
-                        height: 84,
-                        fit: BoxFit.contain,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                        child: Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Shopping List',
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                    color: t.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "Let's get what you need ✨",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: t.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Image.asset(
+                              'assets/illustrations/splash_basket.png',
+                              width: 84,
+                              height: 84,
+                              fit: BoxFit.contain,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: _SearchPill(),
+                      ),
+                      Obx(() {
+                        if (!controller.showSuggestions) {
+                          return const SizedBox.shrink();
+                        }
+                        return Flexible(
+                          child: _SuggestionsPanel(
+                            maxHeight: MediaQuery.sizeOf(context).height * 0.35,
+                          ),
+                        );
+                      }),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                        child: _FilterChips(controller: controller),
+                      ),
+                      Expanded(
+                        child: Obx(() {
+                          if (controller.isEmpty) {
+                            return CustomScrollView(
+                              slivers: [
+                                SliverFillRemaining(
+                                  hasScrollBody: false,
+                                  child: const _EmptyState(),
+                                ),
+                              ],
+                            );
+                          }
+                          return _FilteredList(
+                            controller: controller,
+                            onClear: () =>
+                                ClearPurchasedDialog.confirm(context),
+                          );
+                        }),
                       ),
                     ],
                   ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: _SearchPill(),
-                ),
-                Obx(() {
-                  if (!controller.showSuggestions) {
-                    return const SizedBox.shrink();
-                  }
-                  return Flexible(
-                    child: _SuggestionsPanel(
-                      maxHeight: MediaQuery.sizeOf(context).height * 0.35,
-                    ),
-                  );
-                }),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                  child: _FilterChips(controller: controller),
-                ),
-                Expanded(
-                  child: Obx(() {
-                    if (controller.isEmpty) {
-                      return CustomScrollView(
-                        slivers: [
-                          SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: const _EmptyState(),
-                          ),
-                        ],
-                      );
-                    }
-                    return _FilteredList(
-                      controller: controller,
-                      onClear: () => ClearPurchasedDialog.confirm(context),
-                    );
-                  }),
                 ),
               ],
             ),
-          ),
-        ],
+          },
+        ),
       ),
-        }),
+      floatingActionButton: SizedBox(
+        width: 56,
+        height: 56,
+        child: FloatingActionButton(
+          onPressed: () {
+            HapticService.selection();
+            PreviousListDialogs.createNewList(context);
+          },
+          shape: const CircleBorder(),
+          backgroundColor: t.primary,
+          foregroundColor: Colors.white,
+          elevation: 6,
+          tooltip: 'Create New List',
+          child: const Icon(Icons.add, size: 28),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: const _BottomNav(),
     );
   }
 }
 
-class _ClearMenuButton extends GetView<HomeController> {
+class _ListMenuButton extends GetView<HomeController> {
   final IconData icon;
 
-  const _ClearMenuButton({required this.icon});
+  const _ListMenuButton({required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -161,8 +190,24 @@ class _ClearMenuButton extends GetView<HomeController> {
     return PopupMenuButton<String>(
       color: t.surface,
       icon: Icon(icon, color: t.textPrimary),
-      onSelected: (_) => ClearPurchasedDialog.confirm(context),
+      onSelected: (value) {
+        switch (value) {
+          case 'finish':
+            PreviousListDialogs.finishShopping(context);
+          case 'clear':
+            ClearPurchasedDialog.confirm(context);
+        }
+      },
       itemBuilder: (_) => [
+        PopupMenuItem(
+          value: 'finish',
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.check_circle_outline, size: 20),
+            title: const Text('Finish shopping'),
+          ),
+        ),
         if (controller.hasPurchased)
           PopupMenuItem(
             value: 'clear',
@@ -409,41 +454,15 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = AppTokens.of(context);
     return Obx(() {
-      final active = controller.filter.value;
-      final labels = [
-        'All (${controller.items.length})',
-        'To Buy (${controller.remainingCount})',
-        'Purchased (${controller.items.where((e) => e.isPurchased).length})',
-      ];
-      return Row(
-        children: List.generate(3, (i) {
-          final selected = active == i;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(labels[i]),
-              selected: selected,
-              showCheckmark: false,
-              backgroundColor: t.surface,
-              selectedColor: t.primary,
-              side: BorderSide(color: t.divider),
-              labelStyle: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : t.textPrimary,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              onSelected: (_) {
-                controller.filter.value = i;
-                HapticService.selection();
-              },
-            ),
-          );
-        }),
+      return ItemFilterChips(
+        labels: [
+          'All (${controller.items.length})',
+          'To Buy (${controller.remainingCount})',
+          'Purchased (${controller.items.where((e) => e.isPurchased).length})',
+        ],
+        selected: controller.filter.value,
+        onChanged: (index) => controller.filter.value = index,
       );
     });
   }
@@ -631,8 +650,7 @@ class _SettingsPage extends GetView<HomeController> {
                 ),
                 const Text(
                   'Settings',
-                  style:
-                      TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -650,26 +668,24 @@ class _SettingsPage extends GetView<HomeController> {
                             : Icons.brightness_6,
                         iconColor: t.textPrimary,
                         title: 'App Theme',
-                        subtitle:
-                            _settings.isDark.value ? 'Dark' : 'Light',
+                        subtitle: _settings.isDark.value ? 'Dark' : 'Light',
                         showChevron: true,
                         onTap: () => _settings.toggleTheme(),
                       ),
-                      _SettingsTile(
-                        icon: Icons.volume_up,
-                        iconColor: t.textPrimary,
-                        title: 'Haptic Feedback',
-                        trailingSwitch: true,
-                        switchValue: _settings.hapticsEnabled.value,
-                        onSwitch: _settings.setHaptics,
-                      ),
+                      // _SettingsTile(
+                      //   icon: Icons.volume_up,
+                      //   iconColor: t.textPrimary,
+                      //   title: 'Haptic Feedback',
+                      //   trailingSwitch: true,
+                      //   switchValue: _settings.hapticsEnabled.value,
+                      //   onSwitch: _settings.setHaptics,
+                      // ),
                       _SettingsTile(
                         icon: Icons.delete_outline,
                         iconColor: t.destructive,
                         title: 'Clear Purchased Items',
                         showChevron: true,
-                        onTap: () =>
-                            ClearPurchasedDialog.confirm(context),
+                        onTap: () => ClearPurchasedDialog.confirm(context),
                       ),
                     ],
                   ),
@@ -726,37 +742,43 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
         color: t.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.divider),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: EdgeInsets.only(left: 14, right: showChevron ? 6 : 14),
-        leading: Icon(icon, size: 24, color: iconColor),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: t.divider),
         ),
-        subtitle: subtitle == null
-            ? null
-            : Text(
-                subtitle!,
-                style: TextStyle(fontSize: 12.5, color: t.textSecondary),
-              ),
-        trailing: trailingSwitch
-            ? Switch(
-                value: switchValue,
-                activeColor: Colors.white,
-                activeTrackColor: t.primary,
-                onChanged: onSwitch,
-              )
-            : showChevron
-            ? Icon(Icons.chevron_right, color: t.textSecondary)
-            : null,
+        child: ListTile(
+          onTap: onTap,
+          contentPadding: EdgeInsets.only(
+            left: 14,
+            right: showChevron ? 6 : 14,
+          ),
+          leading: Icon(icon, size: 24, color: iconColor),
+          title: Text(
+            title,
+            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+          ),
+          subtitle: subtitle == null
+              ? null
+              : Text(
+                  subtitle!,
+                  style: TextStyle(fontSize: 12.5, color: t.textSecondary),
+                ),
+          trailing: trailingSwitch
+              ? Switch(
+                  value: switchValue,
+                  activeThumbColor: Colors.white,
+                  activeTrackColor: t.primary,
+                  onChanged: onSwitch,
+                )
+              : showChevron
+              ? Icon(Icons.chevron_right, color: t.textSecondary)
+              : null,
+        ),
       ),
     );
   }
@@ -826,50 +848,62 @@ class _BottomNav extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
-        child: Container(
-          height: 64,
-          decoration: BoxDecoration(
-            color: t.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: t.divider),
-          ),
-          child: Obx(() {
-            final active = controller.tab.value;
-            return Row(
-              children: [
-                Expanded(
-                  child: _NavItem(
-                    icon: Icons.view_agenda_outlined,
-                    label: 'List',
-                    selected: active == 0,
-                    onTap: () => controller.tab.value = 0,
-                  ),
-                ),
-                Expanded(
-                  child: _NavItem(
-                    icon: Icons.ios_share,
-                    label: 'Share',
-                    selected: active == 2,
-                    onTap: () => controller.tab.value = 2,
-                  ),
-                ),
-                Expanded(
-                  child: _NavItem(
-                    icon: Icons.settings_outlined,
-                    label: 'Settings',
-                    selected: active == 1,
-                    onTap: () => controller.tab.value = 1,
-                  ),
-                ),
-              ],
-            );
-          }),
-        ),
-      ),
+    return BottomAppBar(
+      color: t.surface,
+      elevation: 8,
+      height: 68,
+      padding: EdgeInsets.zero,
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      child: Obx(() {
+        final active = controller.tab.value;
+        return Row(
+          children: [
+            Expanded(
+              child: _NavItem(
+                icon: Icons.home_outlined,
+                label: 'Home',
+                selected: active == 0,
+                onTap: () => _go(tab: 0),
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.ios_share,
+                label: 'Share',
+                selected: active == 2,
+                onTap: () => _go(tab: 2),
+              ),
+            ),
+            // Left open for the docked Add button.
+            const Expanded(child: SizedBox()),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.save_outlined,
+                label: 'Save',
+                onTap: () {
+                  HapticService.selection();
+                  PreviousListDialogs.saveCurrentList(context);
+                },
+              ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                selected: active == 1,
+                onTap: () => _go(tab: 1),
+              ),
+            ),
+          ],
+        );
+      }),
     );
+  }
+
+  void _go({required int tab}) {
+    controller.tab.value = tab;
+    HapticService.selection();
   }
 }
 
@@ -882,8 +916,8 @@ class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
     required this.label,
-    required this.selected,
     required this.onTap,
+    this.selected = false,
   });
 
   @override
@@ -897,19 +931,23 @@ class _NavItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 22, color: color),
               const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
                 ),
               ),
             ],
@@ -1045,126 +1083,6 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AppDrawer extends GetView<HomeController> {
-  const _AppDrawer();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppTokens.of(context);
-    return Drawer(
-      backgroundColor: t.surface,
-      child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Row(
-                children: [
-                  Image.asset(
-                    'assets/illustrations/splash_basket.png',
-                    width: 52,
-                    height: 52,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Shopping List',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: t.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Remember. Add. Buy. Done.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: t.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(color: t.divider, height: 1),
-            _DrawerTile(
-              icon: Icons.info_outline,
-              iconColor: t.textPrimary,
-              label: 'About',
-              onTap: () {
-                _homeScaffoldKey.currentState?.closeDrawer();
-                WidgetsBinding.instance.addPostFrameCallback(
-                  (_) => showAppAboutDialog(context),
-                );
-              },
-            ),
-            _DrawerTile(
-              icon: Icons.privacy_tip_outlined,
-              iconColor: t.primary,
-              label: 'Privacy Policy',
-              onTap: () {
-                _homeScaffoldKey.currentState?.closeDrawer();
-                Get.to(() => const PrivacyPolicyPage());
-              },
-            ),
-            _DrawerTile(
-              icon: Icons.description_outlined,
-              iconColor: t.primary,
-              label: 'Terms & Conditions',
-              onTap: () {
-                _homeScaffoldKey.currentState?.closeDrawer();
-                Get.to(() => const TermsPage());
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DrawerTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final VoidCallback onTap;
-
-  const _DrawerTile({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppTokens.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: iconColor),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(fontSize: 15, color: t.textPrimary),
-            ),
-          ],
-        ),
       ),
     );
   }

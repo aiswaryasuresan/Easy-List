@@ -2,24 +2,25 @@ import 'package:flutter/material.dart' show FocusNode, TextEditingController;
 import 'package:get/get.dart';
 
 import '../../core/services/haptic_service.dart';
+import '../../core/writers/item_writer.dart';
 import '../../data/default_product_catalog.dart';
 import '../../data/malayalam_product_catalog.dart';
 import '../../data/models/shopping_item.dart';
 import '../../data/repositories/cart_repository.dart';
 import '../../data/repositories/item_history_repository.dart';
 
-class HomeController extends GetxController {
+class HomeController extends GetxController implements ItemWriter {
   final CartRepository _repo = Get.put(CartRepository());
   final ItemHistoryRepository _history = Get.put(ItemHistoryRepository());
   List<HistoryEntry> _historyEntries = [];
 
   final items = <ShoppingItem>[].obs;
-  final purchasedSectionExpanded = false.obs;
+  final purchasedSectionExpanded = true.obs;
 
   // 0 = All, 1 = To Buy, 2 = Purchased
   final filter = 0.obs;
 
-  // 0 = List tab, 1 = Settings tab, 2 = Share tab
+  // 0 = List tab, 1 = Settings tab, 2 = Share tab, 3 = Create Lists tab
   final tab = 0.obs;
   final query = ''.obs;
   final searchFocus = FocusNode();
@@ -31,6 +32,9 @@ class HomeController extends GetxController {
     items.assignAll(_repo.loadItems());
     _historyEntries = _history.load();
   }
+
+  @override
+  String get listLabel => 'your shopping list';
 
   @override
   void onClose() {
@@ -140,6 +144,7 @@ class HomeController extends GetxController {
     return null;
   }
 
+  @override
   void addItem(String name, double? quantity, String? unit) {
     final now = DateTime.now().millisecondsSinceEpoch;
     items.add(ShoppingItem(
@@ -158,6 +163,7 @@ class HomeController extends GetxController {
     HapticService.success();
   }
 
+  @override
   void updateItem(int id, String name, double? quantity, String? unit) {
     final index = items.indexWhere((e) => e.id == id);
     if (index == -1) return;
@@ -169,11 +175,13 @@ class HomeController extends GetxController {
     HapticService.success();
   }
 
+  @override
   void deleteItem(int id) {
     items.removeWhere((e) => e.id == id);
     _persist();
   }
 
+  @override
   void duplicateItem(int id) {
     final source = items.where((e) => e.id == id).firstOrNull;
     if (source == null) return;
@@ -190,6 +198,7 @@ class HomeController extends GetxController {
     _persist();
   }
 
+  @override
   void togglePurchased(int id) {
     final item = items.where((e) => e.id == id).firstOrNull;
     if (item == null) return;
@@ -199,9 +208,60 @@ class HomeController extends GetxController {
     HapticService.lightTap();
   }
 
+  @override
   void clearPurchased() {
     items.removeWhere((e) => e.isPurchased);
     _persist();
+  }
+
+  void clearList() {
+    items.clear();
+    _persist();
+  }
+
+  /// Copies [source] into the active list as fresh, unchecked items, skipping
+  /// names that are already present. Returns how many items were added.
+  int addSavedItems(List<ShoppingItem> source) {
+    final added = _copyInto(source, skipExisting: true);
+    if (added == 0) return 0;
+    _persist();
+    _historyEntries = _history.load();
+    return added;
+  }
+
+  /// Replaces the active list with a fresh copy of [source]. Every saved item
+  /// is carried over, even a name that repeats inside the snapshot.
+  int replaceWithSavedItems(List<ShoppingItem> source) {
+    items.clear();
+    final added = _copyInto(source);
+    _persist();
+    _historyEntries = _history.load();
+    return added;
+  }
+
+  int _copyInto(List<ShoppingItem> source, {bool skipExisting = false}) {
+    final seen = skipExisting
+        ? items.map((e) => normalizeProductName(e.name)).toSet()
+        : <String>{};
+    final now = DateTime.now().millisecondsSinceEpoch;
+    var added = 0;
+    for (final saved in source) {
+      final name = saved.name.trim();
+      final normalized = normalizeProductName(name);
+      if (normalized.isEmpty) continue;
+      if (skipExisting && !seen.add(normalized)) continue;
+      items.add(ShoppingItem(
+        id: _repo.nextId(items),
+        name: name,
+        quantity: saved.quantity,
+        unit: saved.unit,
+        sortOrder: _repo.nextSortOrder(items),
+        createdAt: now,
+      ));
+      _history.record(name, saved.unit);
+      added++;
+    }
+    return added;
   }
 
   void _persist() => _repo.saveItems(items);

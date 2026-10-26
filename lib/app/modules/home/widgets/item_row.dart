@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/writers/item_writer.dart';
 import '../../../data/models/shopping_item.dart';
 import '../../item_form/item_form_sheet.dart';
 import '../../../theme/app_theme.dart';
@@ -9,13 +10,14 @@ import 'item_options_sheet.dart';
 
 class ItemRow extends StatelessWidget {
   final ShoppingItem item;
+  final ItemWriter? writer;
 
-  const ItemRow({super.key, required this.item});
+  const ItemRow({super.key, required this.item, this.writer});
 
   @override
   Widget build(BuildContext context) {
     final t = AppTokens.of(context);
-    final controller = Get.find<HomeController>();
+    final controller = writer ?? Get.find<HomeController>();
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
@@ -91,11 +93,12 @@ class ItemRow extends StatelessWidget {
             onSelected: (value) {
               switch (value) {
                 case 'edit':
-                  ItemFormSheet.showEdit(item);
+                  ItemFormSheet.showEdit(item, writer: writer);
                 case 'duplicate':
                   controller.duplicateItem(item.id);
                 case 'delete':
-                  ItemOptionsSheet.confirmDelete(context, item);
+                  ItemOptionsSheet.confirmDelete(context, item,
+                      writer: writer);
               }
             },
             itemBuilder: (_) => [
